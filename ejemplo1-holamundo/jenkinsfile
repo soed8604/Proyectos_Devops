@@ -1,0 +1,35 @@
+pipeline {
+    agent any
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                git 'https://github.com/tu-repositorio/hola-mundo-apache.git'
+            }
+        }
+        
+        stage('Build') {
+            steps {
+                script {
+                    sh 'podman build -t hola-mundo-apache .'
+                }
+            }
+        }
+        
+        stage('Run') {
+            steps {
+                script {
+                    sh 'podman run -d -p 8080:80 --name hola-mundo hola-mundo-apache'
+                }
+            }
+        }
+    }
+    
+    post {
+        always {
+            sh 'podman stop hola-mundo || true'
+            sh 'podman rm hola-mundo || true'
+            cleanWs()
+        }
+    }
+}
