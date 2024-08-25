@@ -1,0 +1,14 @@
+# Utilizar la imagen base de Apache
+FROM bitnami/apache:latest
+
+# Copiar el archivo index.html al directorio de documentos de Apache
+COPY ./src/index.html /var/www/html
+
+# Configurar los permisos del archivo index.html
+RUN chmod 644 /usr/local/apache2/htdocs/index.html
+
+# Ejecutar la aplicación
+CMD [ "src/index.html" ]
+
+# Expone el puerto 80
+EXPOSE 80
