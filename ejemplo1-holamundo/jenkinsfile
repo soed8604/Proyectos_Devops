@@ -7,7 +7,7 @@ pipeline {
         TASK_NUMBER = "${env.BUILD_NUMBER}" // Número de la tarea actual
         CONTAINER_NAME = "${DIRECTORY_NAME}-${TASK_NUMBER}"
         GIT_CREDENTIALS_ID = 'github-token' // ID de la credencial configurada en Jenkins
-        REMOTE_USER = 'esotelo' // Reemplaza con el nombre de usuario del servidor remoto
+        REMOTE_USER = 'jenkins@gmail.com' // Reemplaza con el nombre de usuario del servidor remoto
         REMOTE_HOST = '192.168.100.55'
     }
     
