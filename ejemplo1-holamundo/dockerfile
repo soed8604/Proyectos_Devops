@@ -7,6 +7,7 @@ COPY ./src/index.html /var/www/html
 # Configurar los permisos del archivo index.html
 RUN chmod 644 /usr/local/apache2/htdocs/index.html
 
+# Ejecutar la aplicación
 CMD [ "src/index.html" ]
 
 # Expone el puerto 80
