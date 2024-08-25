@@ -33,7 +33,7 @@ pipeline {
             steps {
                 script {
                      // Construir la imagen de Podman en el servidor remoto
-                    sh "ssh ${REMOTE_USER}@${REMOTE_HOST} 'cd /path/to/project && podman build -t ${CONTAINER_NAME} .'" 
+                    sh "ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} 'cd /path/to/project && podman build -t ${CONTAINER_NAME} .'" 
                     // Reemplaza /path/to/project con la ruta al proyecto en el servidor remoto
                 }
             }
@@ -43,7 +43,7 @@ pipeline {
             steps {
                 script {
                     // Ejecutar el contenedor en el servidor remoto
-                    sh "ssh ${REMOTE_USER}@${REMOTE_HOST} 'podman run -d -p 8080:80 --name ${CONTAINER_NAME} ${CONTAINER_NAME}'"
+                    sh "ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} 'podman run -d -p 8080:80 --name ${CONTAINER_NAME} ${CONTAINER_NAME}'"
                 }
             }
         }
@@ -51,8 +51,8 @@ pipeline {
     
     post {
         always {
-             sh "ssh ${REMOTE_USER}@${REMOTE_HOST} 'podman stop ${CONTAINER_NAME} || true'"
-            sh "ssh ${REMOTE_USER}@${REMOTE_HOST} 'podman rm ${CONTAINER_NAME} || true'"
+            sh "ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} 'podman stop ${CONTAINER_NAME} || true'"
+            sh "ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} 'podman rm ${CONTAINER_NAME} || true'"
             cleanWs()
         }
     }
