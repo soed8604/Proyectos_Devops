@@ -1,17 +1,40 @@
 pipeline {
     agent any
+
+     environment {
+        // Definir variables para el nombre del contenedor
+        DIRECTORY_NAME = sh(script: 'basename $(pwd)', returnStdout: true).trim()
+        TASK_NUMBER = "${env.BUILD_NUMBER}" // Número de la tarea actual
+        CONTAINER_NAME = "${DIRECTORY_NAME}-${TASK_NUMBER}"
+        GIT_CREDENTIALS_ID = 'github-token' // ID de la credencial configurada en Jenkins
+        REMOTE_USER = 'esotelo' // Reemplaza con el nombre de usuario del servidor remoto
+        REMOTE_HOST = '192.168.100.55'
+    }
     
     stages {
         stage('Checkout') {
             steps {
-                git 'https://github.com/tu-repositorio/hola-mundo-apache.git'
+                  script {
+                    git credentialsId: "${GIT_CREDENTIALS_ID}", 
+                        url: 'https://github.com/soed8604/proyectos_devops.git', 
+                        branch: 'main'
+                }
+                   sh '''
+                    git init
+                    git remote add origin https://github.com/soed8604/proyectos_devops.git
+                    git config core.sparseCheckout true
+                    echo "ejemplo1-holamundo" >> .git/info/sparse-checkout
+                    git pull origin main
+                    '''
             }
         }
         
         stage('Build') {
             steps {
                 script {
-                    sh 'podman build -t hola-mundo-apache .'
+                     // Construir la imagen de Podman en el servidor remoto
+                    sh "ssh ${REMOTE_USER}@${REMOTE_HOST} 'cd /path/to/project && podman build -t ${CONTAINER_NAME} .'" 
+                    // Reemplaza /path/to/project con la ruta al proyecto en el servidor remoto
                 }
             }
         }
@@ -19,7 +42,8 @@ pipeline {
         stage('Run') {
             steps {
                 script {
-                    sh 'podman run -d -p 8080:80 --name hola-mundo hola-mundo-apache'
+                    // Ejecutar el contenedor en el servidor remoto
+                    sh "ssh ${REMOTE_USER}@${REMOTE_HOST} 'podman run -d -p 8080:80 --name ${CONTAINER_NAME} ${CONTAINER_NAME}'"
                 }
             }
         }
@@ -27,8 +51,8 @@ pipeline {
     
     post {
         always {
-            sh 'podman stop hola-mundo || true'
-            sh 'podman rm hola-mundo || true'
+             sh "ssh ${REMOTE_USER}@${REMOTE_HOST} 'podman stop ${CONTAINER_NAME} || true'"
+            sh "ssh ${REMOTE_USER}@${REMOTE_HOST} 'podman rm ${CONTAINER_NAME} || true'"
             cleanWs()
         }
     }
