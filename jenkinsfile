@@ -1,0 +1,69 @@
+pipeline {
+    agent any
+
+    environment {
+        // Definir variables para el nombre del contenedor
+        DIRECTORY_NAME = sh(script: 'basename $(pwd)', returnStdout: true).trim()
+        TASK_NUMBER = "${env.BUILD_NUMBER}" // Número de la tarea actual
+        CONTAINER_NAME = "${DIRECTORY_NAME}-${TASK_NUMBER}"
+        GIT_CREDENTIALS_ID = 'github-token' // ID de la credencial configurada en Jenkins
+        REMOTE_USER = 'esotelo' // Nombre de usuario del servidor remoto
+        REMOTE_HOST = '192.168.100.55'
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                script {
+                    git credentialsId: "${GIT_CREDENTIALS_ID}", 
+                        url: 'https://github.com/soed8604/proyectos_devops.git', 
+                        branch: 'main'
+                }
+                sh '''
+                    git init
+                    git remote add origin https://github.com/soed8604/proyectos_devops.git
+                    git config core.sparseCheckout true
+                    echo "ejemplo1-holamundo" >> .git/info/sparse-checkout
+                    git pull origin main
+                '''
+            }
+        }
+        
+        stage('Build') {
+            steps {
+                 sshagent(credentials: ['ssh-credentials-id']) {
+                    script {
+                        // Construir la imagen de Podman en el servidor remoto
+                        sh "ssh -v -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} 'cd /path/to/project && podman build -t ${CONTAINER_NAME} .'"
+                        // Reemplaza /path/to/project con la ruta al proyecto en el servidor remoto
+                    }
+                }
+            }
+        }
+        
+        stage('Run') {
+            steps {
+                 sshagent(credentials: ['ssh-credentials-id']) {
+                    script {
+                        // Ejecutar el contenedor en el servidor remoto
+                        sh "ssh -v -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} 'podman run -d -p 8080:80 --name ${CONTAINER_NAME} ${CONTAINER_NAME}'"
+                    }
+                }
+            }
+        }
+    }
+    
+    post {
+        always {
+             sshagent(credentials: ['ssh-credentials-id']) {
+                script {
+                    sh "ssh -v -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} 'podman stop ${CONTAINER_NAME} || true'"
+                    sh "ssh -v -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} 'podman rm ${CONTAINER_NAME} || true'"
+                }
+            }
+            cleanWs()
+        }
+    }
+}
+
+
